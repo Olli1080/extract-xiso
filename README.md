@@ -75,30 +75,44 @@ Extract XISO contents to a directory.
 
 ## Building
 
+extract-xiso is written in C++23 and built with CMake. Third-party libraries ([CLI11](https://github.com/CLIUtils/CLI11), and [GoogleTest](https://github.com/google/googletest) for the tests) come from [vcpkg](https://github.com/microsoft/vcpkg) in manifest mode. The code only relies on the standard library, so it builds the same on Windows, Linux and macOS.
+
 ### Requirements
 
-- cmake
-- make
-- gcc
+- CMake 3.25 or newer
+- A C++23 compiler (MSVC 2022 17.8+, GCC 13+, or a recent Clang)
+- vcpkg, with `VCPKG_ROOT` pointing at it
 
-### Windows / macOS / Linux
-
-After requirements are installed with your distribution's package manager (or homebrew for macOS), open terminal and change directory to the project root. Then run the following build commands:
+### Build
 
 ```
-# Clone Repo
 git clone https://github.com/XboxDev/extract-xiso.git
-
-# cd into directory
 cd extract-xiso
 
-# Create working directory
-mkdir build
-cd build
+# Ninja Multi-Config (Linux, macOS, or Windows from a developer prompt)
+cmake --preset default
+cmake --build --preset default-release
 
-# Build project
-cmake ..
-make
+# or with Visual Studio 2026 / 2022 on Windows
+cmake --preset vs2026
+cmake --build --preset vs2026-release
 ```
 
-The compiled binary should now be in the `extract-xiso/build` directory as `extract-xiso`.
+The binary ends up in `build/<preset>/main/<config>/extract-xiso`.
+
+### Tests
+
+```
+cmake --preset tests
+cmake --build --preset tests-debug
+ctest --preset tests-debug
+```
+
+### Layout
+
+| Path | Contents |
+|------|----------|
+| `include/xiso/`, `src/` | the `xiso` library: image reader and writer, AVL directory tree, media patch, and the create/list/extract/rewrite operations |
+| `main/` | the command line front end |
+| `tests/` | GoogleTest unit and round-trip tests |
+| `docs/HISTORY.md` | change log and licence notice of the original C source |

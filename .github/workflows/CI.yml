@@ -6,11 +6,14 @@ on:
       - master
     paths-ignore:
       - '*.md'
-      - '*.yml'
+      - 'docs/**'
   pull_request:
     paths-ignore:
       - '*.md'
-      - '*.yml'
+      - 'docs/**'
+
+env:
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
 
 jobs:
   Init:
@@ -19,7 +22,6 @@ jobs:
     - name: Create build tag
       run: |
         export BUILD_TAG=build-$(date -u +'%Y%m%d%H%M')
-        echo "BUILD_TAG=$BUILD_TAG" >> $GITHUB_ENV
         echo -n $BUILD_TAG > tag
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
@@ -30,56 +32,59 @@ jobs:
   build-windows:
     runs-on: windows-latest
     needs: Init
-    env:
-      POWERSHELL_TELEMETRY_OPTOUT: 1
     strategy:
       fail-fast: false
       matrix:
         configuration: [Release, Debug]
-        arch: [x86, x64]
-        include:
-          - arch: x86
-            platform: Win32
-            artifact_os: Win32
-          - arch: x64
-            platform: x64
-            artifact_os: Win64
     steps:
-    - uses: actions/checkout@v2
-    - name: CMake generate
+    - uses: actions/checkout@v4
+    - name: Install vcpkg
+      shell: pwsh
       run: |
-        mkdir build && cd build
-        cmake .. -A ${{ matrix.platform }}
+        git clone https://github.com/microsoft/vcpkg.git $env:VCPKG_ROOT
+        & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
+    - name: CMake generate
+      run: >
+        cmake -S . -B build -A x64
+        -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        -DVCPKG_TARGET_TRIPLET=x64-windows
+        -DXISO_BUILD_TESTS=ON
     - name: Build
+      run: cmake --build build --config ${{ matrix.configuration }} -j $env:NUMBER_OF_PROCESSORS
+    - name: Test
       working-directory: build
-      run: cmake --build . --config ${{ matrix.configuration }} -j $env:NUMBER_OF_PROCESSORS
+      run: ctest -C ${{ matrix.configuration }} --output-on-failure
     - name: Prepare artifacts
       run: |
         mkdir artifacts
-        mv -vb build\${{ matrix.configuration }}\extract-xiso.exe, LICENSE.TXT artifacts
+        mv -vb build\main\${{ matrix.configuration }}\extract-xiso.exe, LICENSE.TXT artifacts
         cd artifacts
-        powershell Compress-Archive . ../extract-xiso-${{ matrix.artifact_os }}_${{ matrix.configuration }}.zip
+        powershell Compress-Archive . ../extract-xiso-Win64_${{ matrix.configuration }}.zip
     - uses: actions/upload-artifact@v4
       with:
-        name: extract-xiso_${{ matrix.artifact_os }}_${{ matrix.configuration }}
-        path: extract-xiso-${{ matrix.artifact_os }}_${{ matrix.configuration }}.zip
+        name: extract-xiso_Win64_${{ matrix.configuration }}
+        path: extract-xiso-Win64_${{ matrix.configuration }}.zip
 
   build-linux:
     runs-on: ubuntu-latest
     needs: Init
     steps:
-    - uses: actions/checkout@v2
-    - name: CMake generate
+    - uses: actions/checkout@v4
+    - name: Install vcpkg
       run: |
-        mkdir build && cd build
-        cmake ..
+        git clone https://github.com/microsoft/vcpkg.git $VCPKG_ROOT
+        $VCPKG_ROOT/bootstrap-vcpkg.sh -disableMetrics
+    - name: CMake generate
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DXISO_BUILD_TESTS=ON
     - name: Build
+      run: cmake --build build -j $(nproc --all)
+    - name: Test
       working-directory: build
-      run: cmake --build . -j $(nproc --all)
+      run: ctest --output-on-failure
     - name: Prepare artifacts
       run: |
         mkdir artifacts
-        mv -v build/extract-xiso LICENSE.TXT artifacts
+        mv -v build/main/extract-xiso LICENSE.TXT artifacts
         cd artifacts
         zip -r ../extract-xiso_${{ runner.os }}.zip *
     - uses: actions/upload-artifact@v4
@@ -91,18 +96,22 @@ jobs:
     runs-on: macos-latest
     needs: Init
     steps:
-    - uses: actions/checkout@v2
-    - name: CMake generate
+    - uses: actions/checkout@v4
+    - name: Install vcpkg
       run: |
-        mkdir build && cd build
-        cmake ..
+        git clone https://github.com/microsoft/vcpkg.git $VCPKG_ROOT
+        $VCPKG_ROOT/bootstrap-vcpkg.sh -disableMetrics
+    - name: CMake generate
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DXISO_BUILD_TESTS=ON
     - name: Build
+      run: cmake --build build -j $(sysctl -n hw.ncpu)
+    - name: Test
       working-directory: build
-      run: cmake --build . -j $(sysctl -n hw.ncpu)
+      run: ctest --output-on-failure
     - name: Prepare artifacts
       run: |
         mkdir artifacts
-        mv -v build/extract-xiso LICENSE.TXT artifacts
+        mv -v build/main/extract-xiso LICENSE.TXT artifacts
         cd artifacts
         zip -r ../extract-xiso_${{ runner.os }}.zip *
     - uses: actions/upload-artifact@v4

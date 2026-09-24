@@ -1,0 +1,17 @@
+{
+	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+	"name": "extract-xiso",
+	"version": "2.7.1",
+	"builtin-baseline": "04a9d8e5212d01ee1dd9478eadd9caade4f8b0d4",
+	"dependencies": [
+		"cli11"
+	],
+	"features": {
+		"tests": {
+			"description": "Build the unit tests",
+			"dependencies": [
+				"gtest"
+			]
+		}
+	}
+}

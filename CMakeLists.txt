@@ -1,12 +1,26 @@
-cmake_minimum_required(VERSION 3.5)
-project(extract-xiso)
+cmake_minimum_required(VERSION 3.25)
 
-string(TOUPPER __${CMAKE_SYSTEM_NAME}__ TARGET_OS)
+# Load options before project() so they can influence the vcpkg manifest features
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Options.cmake")
 
-set(SOURCE_FILES
-	extract-xiso.c
-)
+project(extract-xiso
+    VERSION 2.7.1
+    DESCRIPTION "Create, list, rewrite and extract Xbox ISO (xdvdfs) images"
+    LANGUAGES CXX)
 
-add_executable(extract-xiso ${SOURCE_FILES})
-target_compile_definitions(extract-xiso PRIVATE ${TARGET_OS})
-install(TARGETS extract-xiso RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+include(GNUInstallDirs)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake")
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+find_package(CLI11 CONFIG REQUIRED)
+
+add_subdirectory(src)
+add_subdirectory(main)
+
+if(XISO_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
