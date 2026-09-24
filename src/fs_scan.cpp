@@ -104,7 +104,7 @@ Entry scan_directory(const fs::path& directory, const Logger& logger)
 	root.is_directory = true;
 
 	ScanProgress progress(logger);
-	scan_into(directory, root, progress, logger);
+	scan_into(long_path(directory), root, progress, logger);
 	progress.clear();
 	return root;
 }

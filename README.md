@@ -50,7 +50,7 @@ Rewrites filesystem structure of an XISO.
 
 Extract XISO contents to a directory.
 ```
-# Default mode when no arguments given, extracts to ./halo-ce/
+# Default mode when no arguments given, extracts to ./halo-ce/ (next to the iso)
 ./extract-xiso ./halo-ce.iso
 
 # Can be given a target directory

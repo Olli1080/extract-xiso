@@ -268,7 +268,8 @@ Statistics extract_image(const fs::path& image,
 			}
 			logger.info("extracting {}:\n\n", names.file_name);
 
-			const fs::path root = destination ? *destination : from_utf8(names.base_name);
+			const fs::path root =
+				long_path(destination ? *destination : image.parent_path() / from_utf8(names.base_name));
 			std::error_code ec;
 			fs::create_directories(root, ec);
 			if (ec) throw Error(std::format("unable to create directory {}: {}", to_utf8(root), ec.message()));
@@ -318,9 +319,9 @@ RewriteResult rewrite_image(const fs::path& image,
 	fs::path old_image = image;
 	old_image += ".old";
 	std::error_code ec;
-	if (fs::exists(old_image, ec))
+	if (fs::exists(long_path(old_image), ec))
 		throw Error(std::format("{} already exists, cannot rewrite {}", to_utf8(old_image), to_utf8(image)));
-	fs::rename(image, old_image, ec);
+	fs::rename(long_path(image), long_path(old_image), ec);
 	if (ec) throw Error(std::format("cannot rename {} to {}", to_utf8(image), to_utf8(old_image)));
 
 	try
@@ -347,13 +348,13 @@ RewriteResult rewrite_image(const fs::path& image,
 	catch (...)
 	{
 		// Put the original back rather than leaving it stranded under its ".old" name.
-		fs::rename(old_image, image, ec);
+		fs::rename(long_path(old_image), long_path(image), ec);
 		throw;
 	}
 
 	if (delete_original)
 	{
-		fs::remove(old_image, ec);
+		fs::remove(long_path(old_image), ec);
 		if (ec) logger.error("unable to delete {}\n", to_utf8(old_image));
 	}
 	return result;
@@ -365,7 +366,7 @@ Statistics create_image(const fs::path& directory,
 						const Logger& logger)
 {
 	std::error_code ec;
-	if (!fs::is_directory(directory, ec))
+	if (!fs::is_directory(long_path(directory), ec))
 		throw Error(std::format(
 			"unable to change to directory {}: {}", to_utf8(directory), ec ? ec.message() : "Not a directory"));
 

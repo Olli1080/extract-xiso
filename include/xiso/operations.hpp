@@ -25,7 +25,8 @@ struct ImageNames
 /// Prints the files in \p image.
 Statistics list_image(const std::filesystem::path& image, const Options& options, const Logger& logger);
 
-/// Extracts \p image into \p destination, or into a directory named after the image if none is given.
+/// Extracts \p image into \p destination, or into a directory named after the image (without ".iso") next to it
+/// if none is given.
 Statistics extract_image(const std::filesystem::path& image,
 						 const std::optional<std::filesystem::path>& destination,
 						 const Options& options,

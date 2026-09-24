@@ -143,24 +143,25 @@ TEST_F(ImageTest, ExtractRestoresTheTreeIncludingEmptyDirectories)
 	EXPECT_EQ(snapshot(dir / "extracted"), expected());
 }
 
-TEST_F(ImageTest, ExtractWithoutDestinationUsesTheImageName)
+TEST_F(ImageTest, ExtractWithoutDestinationGoesNextToTheImage)
+{
+	fs::create_directories(dir / "images");
+	const fs::path image = create("images/game.iso");
+
+	xiso::extract_image(image, std::nullopt, options, logger);
+
+	EXPECT_EQ(snapshot(dir / "images" / "game"), expected());
+}
+
+TEST_F(ImageTest, ExtractsIntoPathsLongerThanMaxPath)
 {
 	const fs::path image = create();
+	const fs::path deep = dir / std::string(90, 'd') / std::string(90, 'e') / std::string(90, 'f');
 
-	const fs::path previous = fs::current_path();
-	fs::current_path(dir.path());
-	try
-	{
-		xiso::extract_image(image.filename(), std::nullopt, options, logger);
-	}
-	catch (...)
-	{
-		fs::current_path(previous);
-		throw;
-	}
-	fs::current_path(previous);
+	xiso::extract_image(image, deep, options, logger);
 
-	EXPECT_EQ(snapshot(dir / "game"), expected());
+	ASSERT_GT(deep.native().size(), 260u);
+	EXPECT_EQ(snapshot(xiso::long_path(deep)), expected());
 }
 
 TEST_F(ImageTest, MediaPatchCanBeDisabled)

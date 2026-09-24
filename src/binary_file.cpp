@@ -19,7 +19,7 @@ std::string display(const std::filesystem::path& path) { return to_utf8(path); }
 
 } // namespace
 
-InputFile::InputFile(const std::filesystem::path& path) : path_(path), stream_(path, std::ios::binary)
+InputFile::InputFile(const std::filesystem::path& path) : path_(path), stream_(long_path(path), std::ios::binary)
 {
 	if (!stream_) throw Error(std::format("open error: {} {}", display(path_), last_system_error()));
 }
@@ -55,7 +55,7 @@ void InputFile::read_exact(std::span<std::byte> buffer)
 }
 
 OutputFile::OutputFile(const std::filesystem::path& path)
-	: path_(path), stream_(path, std::ios::binary | std::ios::trunc)
+	: path_(path), stream_(long_path(path), std::ios::binary | std::ios::trunc)
 {
 	if (!stream_) throw Error(std::format("open error: {} {}", display(path_), last_system_error()));
 }

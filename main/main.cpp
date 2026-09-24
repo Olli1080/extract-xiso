@@ -70,7 +70,7 @@ void configure(CLI::App& app, Arguments& args)
 				 args.extract,
 				 "Extract xiso(s) (the default mode if none is given). If no directory is specified "
 				 "with -d, a directory with the name of the xiso (minus the .iso portion) will be "
-				 "created in the current directory and the xiso will be expanded there.")
+				 "created next to the xiso and the xiso will be expanded there.")
 		->group("Mutually exclusive modes");
 
 	app.add_option("-d",

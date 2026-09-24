@@ -21,4 +21,24 @@ namespace xiso
 	return std::filesystem::path(std::u8string(reinterpret_cast<const char8_t*>(text.data()), text.size()));
 }
 
+/// Path to hand to the file system. On Windows this is the absolute path with the extended-length prefix, which
+/// lifts the 260 character MAX_PATH limit (a game folder extracted into a folder of the same long name easily
+/// exceeds it); everywhere else the path is returned as it is.
+[[nodiscard]] inline std::filesystem::path long_path(const std::filesystem::path& path)
+{
+#ifdef _WIN32
+	constexpr std::wstring_view prefix = LR"(\\?\)";
+	constexpr std::wstring_view unc_prefix = LR"(\\?\UNC\)";
+	if (path.empty() || path.native().starts_with(prefix)) return path;
+
+	const std::filesystem::path absolute = std::filesystem::absolute(path).lexically_normal();
+	const std::wstring& native = absolute.native();
+	if (native.starts_with(LR"(\\)")) // \\server\share becomes \\?\UNC\server\share
+		return std::filesystem::path(std::wstring(unc_prefix) + native.substr(2));
+	return std::filesystem::path(std::wstring(prefix) + native);
+#else
+	return path;
+#endif
+}
+
 } // namespace xiso

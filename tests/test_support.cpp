@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <fstream>
 
+#include "xiso/paths.hpp"
+
 namespace test
 {
 
@@ -22,7 +24,7 @@ TempDir::TempDir()
 TempDir::~TempDir()
 {
 	std::error_code ignored;
-	fs::remove_all(path_, ignored);
+	fs::remove_all(xiso::long_path(path_), ignored);
 }
 
 Bytes random_bytes(std::size_t size, unsigned seed)
